@@ -1,7 +1,16 @@
+<!--
+  发票管理页面组件
+  功能说明：
+  - 发票列表展示与分页
+  - 按关键字（发票号/销方/购方）和发票状态搜索
+  - 新增、编辑、查看、删除发票
+  - 发票审核、归档操作
+  - 发票状态与类型的格式化显示
+-->
 <template>
   <div class="invoice-page">
     <el-card>
-      <div class="search-bar">
+      <!-- 搜索栏：包含关键字搜索、状态筛选、搜索/重置按钮、新增按钮 -->
         <el-input
           v-model="searchForm.keyword"
           placeholder="搜索发票号/销方/购方"
@@ -30,6 +39,7 @@
         </el-button>
       </div>
 
+      <!-- 发票数据表格：展示发票列表，包含发票基本信息、状态、操作列 -->
       <el-table :data="tableData" style="width: 100%; margin-top: 20px" v-loading="loading">
         <el-table-column prop="invoice_number" label="发票号码" width="140" />
         <el-table-column prop="invoice_code" label="发票代码" width="140" />
@@ -63,6 +73,7 @@
         </el-table-column>
       </el-table>
 
+      <!-- 分页组件：控制当前页码、每页条数，显示总记录数 -->
       <el-pagination
         style="margin-top: 20px; justify-content: flex-end; display: flex"
         v-model:current-page="pagination.page"
@@ -75,6 +86,7 @@
       />
     </el-card>
 
+    <!-- 新增/编辑发票对话框：包含发票完整信息表单 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px">
       <el-form :model="formData" label-width="100px">
         <el-row :gutter="20">
@@ -145,6 +157,7 @@
       </template>
     </el-dialog>
 
+    <!-- 发票详情对话框：以描述列表形式展示发票完整信息 -->
     <el-dialog v-model="detailVisible" title="发票详情" width="700px">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="发票号码">{{ detailData.invoice_number }}</el-descriptions-item>
@@ -172,64 +185,82 @@
 </template>
 
 <script setup>
+// 导入Vue组合式API
 import { ref, reactive, onMounted } from 'vue'
+// 导入Element Plus消息提示和确认对话框组件
 import { ElMessage, ElMessageBox } from 'element-plus'
+// 导入发票相关API接口函数
 import {
-  getInvoiceList,
-  createInvoice,
-  updateInvoice,
-  deleteInvoice,
-  archiveInvoice,
-  verifyInvoice,
-  getInvoiceDetail
+  getInvoiceList,    // 获取发票列表
+  createInvoice,     // 创建发票
+  updateInvoice,     // 更新发票
+  deleteInvoice,     // 删除发票
+  archiveInvoice,    // 归档发票
+  verifyInvoice,     // 审核发票
+  getInvoiceDetail   // 获取发票详情
 } from '@/api/invoice'
 
+// 表格数据加载状态
 const loading = ref(false)
+// 表单提交加载状态
 const submitLoading = ref(false)
+// 新增/编辑对话框显示状态
 const dialogVisible = ref(false)
+// 详情对话框显示状态
 const detailVisible = ref(false)
+// 对话框标题
 const dialogTitle = ref('')
+// 是否为编辑模式
 const isEdit = ref(false)
+// 当前编辑的发票ID
 const editId = ref(null)
 
+// 发票列表数据
 const tableData = ref([])
+// 发票详情数据
 const detailData = ref({})
 
+// 搜索表单数据
 const searchForm = reactive({
-  keyword: '',
-  invoice_status: null
+  keyword: '',          // 搜索关键字（发票号/销方/购方）
+  invoice_status: null  // 发票状态筛选
 })
 
+// 分页配置
 const pagination = reactive({
-  page: 1,
-  page_size: 10,
-  total: 0
+  page: 1,       // 当前页码
+  page_size: 10, // 每页条数
+  total: 0       // 总记录数
 })
 
+// 发票表单数据（新增/编辑用）
 const formData = reactive({
-  invoice_code: '',
-  invoice_number: '',
-  invoice_date: null,
-  invoice_type: 1,
-  seller_name: '',
-  seller_tax_no: '',
-  buyer_name: '',
-  buyer_tax_no: '',
-  total_amount: 0,
-  total_tax: 0,
-  total_price_tax: 0,
-  remark: ''
+  invoice_code: '',      // 发票代码
+  invoice_number: '',    // 发票号码
+  invoice_date: null,    // 开票日期
+  invoice_type: 1,       // 发票类型（1：专票，2：普票，3：电子专票，4：电子普票）
+  seller_name: '',       // 销方名称
+  seller_tax_no: '',     // 销方税号
+  buyer_name: '',        // 购方名称
+  buyer_tax_no: '',      // 购方税号
+  total_amount: 0,       // 合计金额
+  total_tax: 0,          // 合计税额
+  total_price_tax: 0,    // 价税合计
+  remark: ''             // 备注
 })
 
+// 获取发票列表数据
 const fetchData = async () => {
   loading.value = true
   try {
+    // 调用API获取发票列表，传入分页和搜索参数
     const res = await getInvoiceList({
       page: pagination.page,
       page_size: pagination.page_size,
       keyword: searchForm.keyword || undefined,
       invoice_status: searchForm.invoice_status
     })
+    // 更新表格数据和总记录数
     tableData.value = res.list
     pagination.total = res.total
   } catch (error) {
@@ -239,11 +270,13 @@ const fetchData = async () => {
   }
 }
 
+// 搜索处理：重置为第一页并重新获取数据
 const handleSearch = () => {
   pagination.page = 1
   fetchData()
 }
 
+// 重置搜索：清空搜索条件，重置为第一页并重新获取数据
 const handleReset = () => {
   searchForm.keyword = ''
   searchForm.invoice_status = null
@@ -251,10 +284,12 @@ const handleReset = () => {
   fetchData()
 }
 
+// 新增发票：打开新增对话框，重置表单数据
 const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '新增发票'
   editId.value = null
+  // 重置表单数据，根据字段类型设置默认值
   Object.keys(formData).forEach(key => {
     if (key === 'invoice_type') {
       formData[key] = 1
@@ -268,14 +303,17 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
+// 编辑发票：打开编辑对话框，填充当前行数据
 const handleEdit = (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑发票'
   editId.value = row.id
+  // 将当前行数据合并到表单中
   Object.assign(formData, row)
   dialogVisible.value = true
 }
 
+// 查看发票详情
 const handleView = async (row) => {
   try {
     const res = await getInvoiceDetail(row.id)
@@ -286,17 +324,21 @@ const handleView = async (row) => {
   }
 }
 
+// 提交表单：根据isEdit判断是新增还是编辑
 const handleSubmit = async () => {
   try {
     submitLoading.value = true
     if (isEdit.value) {
+      // 编辑模式：调用更新接口
       await updateInvoice(editId.value, formData)
       ElMessage.success('更新成功')
     } else {
+      // 新增模式：调用创建接口
       await createInvoice(formData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
+    // 刷新列表数据
     fetchData()
   } catch (error) {
     console.error('提交失败:', error)
@@ -305,6 +347,7 @@ const handleSubmit = async () => {
   }
 }
 
+// 删除发票：弹出确认框，确认后调用删除接口
 const handleDelete = (row) => {
   ElMessageBox.confirm('确定要删除这张发票吗？', '提示', {
     confirmButtonText: '确定',
@@ -321,6 +364,7 @@ const handleDelete = (row) => {
   }).catch(() => {})
 }
 
+// 审核发票：弹出确认框，确认后调用审核接口
 const handleVerify = (row) => {
   ElMessageBox.confirm('确定要审核这张发票吗？', '提示', {
     confirmButtonText: '确定',
@@ -337,6 +381,7 @@ const handleVerify = (row) => {
   }).catch(() => {})
 }
 
+// 归档发票：弹出确认框，确认后调用归档接口
 const handleArchive = (row) => {
   ElMessageBox.confirm('确定要归档这张发票吗？', '提示', {
     confirmButtonText: '确定',
@@ -353,6 +398,7 @@ const handleArchive = (row) => {
   }).catch(() => {})
 }
 
+// 发票状态文本转换：将状态数字转换为中文文本
 const statusText = (status) => {
   const map = {
     0: '待审核',
@@ -365,6 +411,7 @@ const statusText = (status) => {
   return map[status] || '未知'
 }
 
+// 发票状态标签类型转换：根据状态返回对应的Element Plus标签类型
 const statusTagType = (status) => {
   const map = {
     0: 'warning',
@@ -377,6 +424,7 @@ const statusTagType = (status) => {
   return map[status] || 'info'
 }
 
+// 发票类型文本转换：将类型数字转换为中文文本
 const invoiceTypeText = (type) => {
   const map = {
     1: '增值税专用发票',
@@ -387,12 +435,14 @@ const invoiceTypeText = (type) => {
   return map[type] || '未知'
 }
 
+// 组件挂载时获取发票列表
 onMounted(() => {
   fetchData()
 })
 </script>
 
 <style scoped>
+/* 搜索栏样式：弹性布局，元素间距12px，垂直居中，允许换行 */
 .search-bar {
   display: flex;
   gap: 12px;
