@@ -56,7 +56,7 @@
       </el-form>
       <!-- 登录提示信息 - 显示默认账号 -->
       <div class="login-tip">
-        <span>默认账号: admin / admin123</span>
+        <span>默认账号: 123 / 123</span>
       </div>
     </el-card>
   </div>
@@ -81,8 +81,8 @@ const loading = ref(false)
 
 // 登录表单数据 - 使用reactive定义响应式对象，包含用户名和密码
 const loginForm = reactive({
-  username: 'admin',
-  password: 'admin123'
+  username: '123',
+  password: '123'
 })
 
 // 登录表单验证规则 - 配置用户名和密码的必填验证

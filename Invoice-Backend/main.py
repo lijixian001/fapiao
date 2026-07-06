@@ -148,23 +148,37 @@ def init_data():
             db.flush()
 
         # 检查是否已存在管理员用户
-        # 通过用户名admin查询
-        admin_user = db.query(SysUser).filter(SysUser.username == "admin").first()
-        # 如果不存在，则创建默认管理员用户
+        # 优先查找用户名为"123"的管理员用户
+        admin_user = db.query(SysUser).filter(SysUser.username == "123").first()
+        # 如果不存在"123"用户，再尝试查找旧的"admin"用户
         if not admin_user:
-            # 对默认密码进行哈希处理
-            hashed_password = hash_password("admin123")
-            admin_user = SysUser(
-                username="admin",                   # 用户名
-                password=hashed_password,           # 哈希后的密码
-                real_name="超级管理员",               # 真实姓名
-                role_id=admin_role.id,              # 关联角色ID
-                email="admin@example.com",          # 邮箱
-                phone="13800138000",                # 手机号
-                status=1                            # 状态：1=启用
-            )
-            # 将用户对象添加到会话
-            db.add(admin_user)
+            old_admin = db.query(SysUser).filter(SysUser.username == "admin").first()
+            if old_admin:
+                # 将旧的admin用户更改为123用户
+                old_admin.username = "123"
+                old_admin.password = hash_password("123")
+                old_admin.real_name = "超级管理员"
+                old_admin.email = "123@example.com"
+                db.commit()
+                db.refresh(old_admin)
+                admin_user = old_admin
+            else:
+                # 如果都不存在，则创建默认管理员用户（用户名和密码都是123）
+                hashed_password = hash_password("123")
+                admin_user = SysUser(
+                    username="123",                     # 用户名
+                    password=hashed_password,           # 哈希后的密码
+                    real_name="超级管理员",               # 真实姓名
+                    role_id=admin_role.id,              # 关联角色ID
+                    email="123@example.com",            # 邮箱
+                    phone="13800138000",                # 手机号
+                    status=1                            # 状态：1=启用
+                )
+                # 将用户对象添加到会话
+                db.add(admin_user)
+        else:
+            # 如果用户已存在，确保密码是最新的（每次启动都重置为默认密码123，方便开发调试）
+            admin_user.password = hash_password("123")
 
         # 提交事务，将所有更改持久化到数据库
         db.commit()
