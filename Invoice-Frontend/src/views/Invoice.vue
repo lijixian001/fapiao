@@ -105,6 +105,8 @@
       width="700px"
       :fullscreen="isMobile"
       class="invoice-dialog"
+      @open="handleDialogOpen"
+      @close="handleDialogClose"
     >
       <el-form :model="formData" label-width="100px" class="invoice-form">
         <el-row :gutter="20">
@@ -496,6 +498,34 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
+
+// 对话框打开时处理（移动端键盘适配）
+const handleDialogOpen = () => {
+  if (isMobile.value) {
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('resize', handleDialogResize)
+  }
+}
+
+// 对话框关闭时处理（移除键盘适配）
+const handleDialogClose = () => {
+  if (isMobile.value) {
+    document.body.style.overflow = ''
+    window.removeEventListener('resize', handleDialogResize)
+  }
+}
+
+// 对话框键盘弹出时的滚动处理
+const handleDialogResize = () => {
+  if (isMobile.value && dialogVisible.value) {
+    setTimeout(() => {
+      const activeElement = document.activeElement
+      if (activeElement) {
+        activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 100)
+  }
+}
 </script>
 
 <style scoped>
@@ -562,6 +592,16 @@ onUnmounted(() => {
 /* ========== 表单详情描述 ========== */
 .detail-descriptions {
   width: 100%;
+}
+
+/* ========== 移动端对话框样式 ========== */
+.invoice-dialog :deep(.el-dialog__body) {
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+}
+
+.invoice-dialog :deep(.el-dialog) {
+  max-height: 100vh;
 }
 
 /* ========== 移动端响应式样式（<=768px） ========== */
