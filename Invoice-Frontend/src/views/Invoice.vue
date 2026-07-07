@@ -153,17 +153,17 @@
         <el-row :gutter="20">
           <el-col :span="8" :xs="24">
             <el-form-item label="合计金额">
-              <el-input-number v-model="formData.total_amount" style="width: 100%" :precision="2" />
+              <el-input-number v-model="formData.total_amount" class="amount-input" :precision="2" />
             </el-form-item>
           </el-col>
           <el-col :span="8" :xs="24">
             <el-form-item label="合计税额">
-              <el-input-number v-model="formData.total_tax" style="width: 100%" :precision="2" />
+              <el-input-number v-model="formData.total_tax" class="amount-input" :precision="2" />
             </el-form-item>
           </el-col>
           <el-col :span="8" :xs="24">
             <el-form-item label="价税合计">
-              <el-input-number v-model="formData.total_price_tax" style="width: 100%" :precision="2" />
+              <el-input-number v-model="formData.total_price_tax" class="amount-input" :precision="2" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -592,6 +592,27 @@ const handleDialogResize = () => {
 /* ========== 表单详情描述 ========== */
 .detail-descriptions {
   width: 100%;
+}
+
+/* ========== 金额输入框样式 ========== */
+.amount-input {
+  width: 100%;
+  min-width: 150px;
+}
+
+.amount-input :deep(.el-input-number) {
+  width: 100%;
+}
+
+.amount-input :deep(.el-input-number__input) {
+  text-align: right;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  padding-right: 30px;
+}
+
+.amount-input :deep(.el-input-number__increase),
+.amount-input :deep(.el-input-number__decrease) {
+  padding: 0 8px;
 }
 
 /* ========== 移动端对话框样式 ========== */
