@@ -111,13 +111,13 @@
       <el-form :model="formData" label-width="100px" class="invoice-form">
         <el-row :gutter="20">
           <el-col :span="12" :xs="24">
-            <el-form-item label="发票代码">
-              <el-input v-model="formData.invoice_code" />
+            <el-form-item label="发票号码">
+              <el-input v-model="formData.invoice_number" />
             </el-form-item>
           </el-col>
           <el-col :span="12" :xs="24">
-            <el-form-item label="发票号码">
-              <el-input v-model="formData.invoice_number" />
+            <el-form-item label="发票代码">
+              <el-input v-model="formData.invoice_code" />
             </el-form-item>
           </el-col>
         </el-row>
