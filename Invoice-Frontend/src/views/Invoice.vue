@@ -366,8 +366,20 @@ const handleSubmit = async () => {
       }
     })
     // 将空字符串日期转换为null，避免后端验证失败
-    if (submitData.invoice_date === '' || submitData.invoice_date === null || submitData.invoice_date === undefined) {
-      submitData.invoice_date = null
+    const dateFields = ['invoice_date', 'deduct_date']
+    dateFields.forEach(field => {
+      if (submitData[field] === '' || submitData[field] === null || submitData[field] === undefined) {
+        submitData[field] = null
+      }
+    })
+    // 将空字符串整数字段转换为null，避免后端验证失败（仅编辑模式）
+    if (isEdit.value) {
+      const intFields = ['invoice_type', 'invoice_status', 'deduct_status']
+      intFields.forEach(field => {
+        if (submitData[field] === '' || submitData[field] === null || submitData[field] === undefined) {
+          submitData[field] = null
+        }
+      })
     }
     if (isEdit.value) {
       await updateInvoice(editId.value, submitData)

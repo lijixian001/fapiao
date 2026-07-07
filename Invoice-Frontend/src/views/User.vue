@@ -222,11 +222,19 @@ const handleEdit = (row) => {
 const handleSubmit = async () => {
   try {
     submitLoading.value = true
+    const submitData = { ...formData }
+    // 将空字符串的整数字段转换为null，避免后端验证失败
+    const intFields = ['role_id', 'status']
+    intFields.forEach(field => {
+      if (submitData[field] === '' || submitData[field] === null || submitData[field] === undefined) {
+        submitData[field] = null
+      }
+    })
     if (isEdit.value) {
-      await updateUser(editId.value, formData)
+      await updateUser(editId.value, submitData)
       ElMessage.success('更新成功')
     } else {
-      await createUser(formData)
+      await createUser(submitData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
