@@ -102,7 +102,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="700px"
+      width="900px"
       :fullscreen="isMobile"
       class="invoice-dialog"
       @open="handleDialogOpen"
