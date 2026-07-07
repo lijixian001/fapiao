@@ -22,6 +22,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fastapi import FastAPI
 # 从FastAPI中间件导入CORS跨域资源共享中间件
 from fastapi.middleware.cors import CORSMiddleware
+# 从FastAPI静态文件导入StaticFiles用于挂载本地资源
+from fastapi.staticfiles import StaticFiles
+# 从FastAPI文档模块导入Swagger UI和ReDoc的HTML生成函数
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 
 # 从配置模块导入应用相关配置
 from core.config import APP_NAME, APP_VERSION, DEBUG
@@ -56,7 +60,9 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=APP_NAME,
         version=APP_VERSION,
-        debug=DEBUG
+        debug=DEBUG,
+        docs_url=None,   # 禁用默认的/docs，使用自定义路由
+        redoc_url=None   # 禁用默认的/redoc，使用自定义路由
     )
 
     # 添加CORS（跨域资源共享）中间件
@@ -82,6 +88,31 @@ def create_app() -> FastAPI:
     app.include_router(user_router)
     # 注册发票管理相关路由（发票CRUD、审核、归档）
     app.include_router(invoice_router)
+
+    # 挂载静态文件目录，用于提供Swagger UI和ReDoc的本地静态资源
+    # 这样无需依赖外部CDN即可加载文档页面
+    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+    if os.path.exists(static_dir):
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    # 自定义Swagger UI文档页面路由，使用本地静态资源
+    @app.get("/docs", include_in_schema=False)
+    async def custom_swagger_ui_html():
+        return get_swagger_ui_html(
+            openapi_url="/openapi.json",
+            title=f"{APP_NAME} - Swagger UI",
+            swagger_js_url="/static/swagger-ui/swagger-ui-bundle.js",
+            swagger_css_url="/static/swagger-ui/swagger-ui.css",
+        )
+
+    # 自定义ReDoc文档页面路由，使用本地静态资源
+    @app.get("/redoc", include_in_schema=False)
+    async def custom_redoc_html():
+        return get_redoc_html(
+            openapi_url="/openapi.json",
+            title=f"{APP_NAME} - ReDoc",
+            redoc_js_url="/static/redoc/redoc.standalone.js",
+        )
 
     # 根路径接口 - 用于服务状态检查
     @app.get("/")
