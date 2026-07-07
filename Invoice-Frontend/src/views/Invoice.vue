@@ -357,11 +357,19 @@ const handleView = async (row) => {
 const handleSubmit = async () => {
   try {
     submitLoading.value = true
+    const submitData = { ...formData }
+    // 将空字符串金额转换为0，避免后端验证失败
+    const numericFields = ['total_amount', 'total_tax', 'total_price_tax']
+    numericFields.forEach(field => {
+      if (submitData[field] === '' || submitData[field] === null || submitData[field] === undefined) {
+        submitData[field] = 0
+      }
+    })
     if (isEdit.value) {
-      await updateInvoice(editId.value, formData)
+      await updateInvoice(editId.value, submitData)
       ElMessage.success('更新成功')
     } else {
-      await createInvoice(formData)
+      await createInvoice(submitData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
