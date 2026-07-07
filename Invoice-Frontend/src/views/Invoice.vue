@@ -365,6 +365,10 @@ const handleSubmit = async () => {
         submitData[field] = 0
       }
     })
+    // 将空字符串日期转换为null，避免后端验证失败
+    if (submitData.invoice_date === '' || submitData.invoice_date === null || submitData.invoice_date === undefined) {
+      submitData.invoice_date = null
+    }
     if (isEdit.value) {
       await updateInvoice(editId.value, submitData)
       ElMessage.success('更新成功')
