@@ -1,60 +1,67 @@
 <!--
-  用户管理页面组件
+  用户管理页面组件（支持PC+移动端响应式）
   功能说明：
   - 用户列表展示与分页
   - 按关键字（用户名/姓名）搜索用户
   - 新增、编辑、删除用户
   - 用户状态（启用/禁用）管理
+  - PC端：搜索栏一行多列，表格正常展示
+  - 移动端：搜索栏单列垂直排列，表格横向滑动，弹窗全屏
 -->
 <template>
   <div class="user-page">
-    <el-card>
-      <!-- 搜索栏：包含关键字搜索、搜索/重置按钮、新增用户按钮 -->
+    <el-card class="page-card">
+      <!-- 搜索栏：PC端一行多列，移动端单列垂直排列 -->
+      <div class="search-bar">
         <el-input
           v-model="searchForm.keyword"
           placeholder="搜索用户名/姓名"
-          style="width: 300px"
           clearable
           @keyup.enter="handleSearch"
+          class="search-item search-input"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
-        <el-button type="primary" @click="handleSearch">
-          <el-icon><Search /></el-icon>搜索
-        </el-button>
-        <el-button @click="handleReset">重置</el-button>
-        <el-button type="success" style="margin-left: auto" @click="handleAdd">
+        <div class="search-buttons">
+          <el-button type="primary" @click="handleSearch" class="search-btn">
+            <el-icon><Search /></el-icon>搜索
+          </el-button>
+          <el-button @click="handleReset" class="search-btn">重置</el-button>
+        </div>
+        <el-button type="success" @click="handleAdd" class="add-btn">
           <el-icon><Plus /></el-icon>新增用户
         </el-button>
       </div>
 
-      <!-- 用户数据表格：展示用户列表，包含用户基本信息、状态、操作列 -->
-      <el-table :data="tableData" style="width: 100%; margin-top: 20px" v-loading="loading">
-        <el-table-column prop="username" label="用户名" width="140" />
-        <el-table-column prop="real_name" label="真实姓名" width="140" />
-        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="phone" label="手机号" width="140" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-              {{ row.status === 1 ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <!-- 用户数据表格：移动端支持横向滑动查看 -->
+      <div class="table-wrapper">
+        <el-table :data="tableData" v-loading="loading" class="user-table">
+          <el-table-column prop="username" label="用户名" width="140" />
+          <el-table-column prop="real_name" label="真实姓名" width="140" />
+          <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="phone" label="手机号" width="140" />
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+                {{ row.status === 1 ? '启用' : '禁用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="created_at" label="创建时间" width="180" />
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+              <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
-      <!-- 分页组件：控制当前页码、每页条数，显示总记录数 -->
+      <!-- 分页组件：移动端居中对齐 -->
       <el-pagination
-        style="margin-top: 20px; justify-content: flex-end; display: flex"
+        class="pagination-wrapper"
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.page_size"
         :page-sizes="[10, 20, 50, 100]"
@@ -65,9 +72,15 @@
       />
     </el-card>
 
-    <!-- 新增/编辑用户对话框：包含用户信息表单 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
-      <el-form :model="formData" label-width="100px">
+    <!-- 新增/编辑用户对话框：移动端全屏展示 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="500px"
+      :fullscreen="isMobile"
+      class="user-dialog"
+    >
+      <el-form :model="formData" label-width="100px" class="user-form">
         <el-form-item label="用户名">
           <el-input v-model="formData.username" :disabled="isEdit" />
         </el-form-item>
@@ -88,8 +101,10 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -97,7 +112,7 @@
 
 <script setup>
 // 导入Vue组合式API
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 // 导入Element Plus消息提示和确认对话框组件
 import { ElMessage, ElMessageBox } from 'element-plus'
 // 导入用户相关API接口函数
@@ -115,42 +130,48 @@ const dialogTitle = ref('')
 const isEdit = ref(false)
 // 当前编辑的用户ID
 const editId = ref(null)
+// 是否为移动端
+const isMobile = ref(false)
+
+// 监听窗口大小变化
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
 // 用户列表数据
 const tableData = ref([])
 
 // 搜索表单数据
 const searchForm = reactive({
-  keyword: ''  // 搜索关键字（用户名/姓名）
+  keyword: ''
 })
 
 // 分页配置
 const pagination = reactive({
-  page: 1,       // 当前页码
-  page_size: 10, // 每页条数
-  total: 0       // 总记录数
+  page: 1,
+  page_size: 10,
+  total: 0
 })
 
 // 用户表单数据（新增/编辑用）
 const formData = reactive({
-  username: '',   // 用户名
-  password: '',   // 密码（仅新增时使用）
-  real_name: '',  // 真实姓名
-  email: '',      // 邮箱
-  phone: '',      // 手机号
-  status: 1       // 状态（1：启用，0：禁用）
+  username: '',
+  password: '',
+  real_name: '',
+  email: '',
+  phone: '',
+  status: 1
 })
 
 // 获取用户列表数据
 const fetchData = async () => {
   loading.value = true
   try {
-    // 调用API获取用户列表，传入分页和搜索参数
     const res = await getUserList({
       page: pagination.page,
       page_size: pagination.page_size,
       keyword: searchForm.keyword || undefined
     })
-    // 更新表格数据和总记录数
     tableData.value = res.list
     pagination.total = res.total
   } catch (error) {
@@ -160,25 +181,24 @@ const fetchData = async () => {
   }
 }
 
-// 搜索处理：重置为第一页并重新获取数据
+// 搜索处理
 const handleSearch = () => {
   pagination.page = 1
   fetchData()
 }
 
-// 重置搜索：清空搜索条件，重置为第一页并重新获取数据
+// 重置搜索
 const handleReset = () => {
   searchForm.keyword = ''
   pagination.page = 1
   fetchData()
 }
 
-// 新增用户：打开新增对话框，重置表单数据
+// 新增用户
 const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '新增用户'
   editId.value = null
-  // 重置表单数据，根据字段类型设置默认值
   Object.keys(formData).forEach(key => {
     if (key === 'status') {
       formData[key] = 1
@@ -189,31 +209,27 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-// 编辑用户：打开编辑对话框，填充当前行数据
+// 编辑用户
 const handleEdit = (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑用户'
   editId.value = row.id
-  // 将当前行数据合并到表单中
   Object.assign(formData, row)
   dialogVisible.value = true
 }
 
-// 提交表单：根据isEdit判断是新增还是编辑
+// 提交表单
 const handleSubmit = async () => {
   try {
     submitLoading.value = true
     if (isEdit.value) {
-      // 编辑模式：调用更新接口
       await updateUser(editId.value, formData)
       ElMessage.success('更新成功')
     } else {
-      // 新增模式：调用创建接口
       await createUser(formData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
-    // 刷新列表数据
     fetchData()
   } catch (error) {
     console.error('提交失败:', error)
@@ -222,7 +238,7 @@ const handleSubmit = async () => {
   }
 }
 
-// 删除用户：弹出确认框，确认后调用删除接口
+// 删除用户
 const handleDelete = (row) => {
   ElMessageBox.confirm('确定要删除这个用户吗？', '提示', {
     confirmButtonText: '确定',
@@ -239,18 +255,137 @@ const handleDelete = (row) => {
   }).catch(() => {})
 }
 
-// 组件挂载时获取用户列表
+// 组件挂载时
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   fetchData()
+})
+
+// 组件卸载时
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
-/* 搜索栏样式：弹性布局，元素间距12px，垂直居中，允许换行 */
+/* 页面卡片容器 */
+.page-card {
+  width: 100%;
+}
+
+/* ========== 搜索栏样式 ========== */
 .search-bar {
   display: flex;
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.search-item {
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 300px;
+}
+
+.search-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.add-btn {
+  margin-left: auto;
+}
+
+/* ========== 表格样式 ========== */
+.table-wrapper {
+  margin-top: 20px;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.user-table {
+  width: 100%;
+  min-width: 700px;
+}
+
+/* ========== 分页样式 ========== */
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ========== 对话框底部按钮 ========== */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ========== 移动端响应式样式（<=768px） ========== */
+@media screen and (max-width: 768px) {
+  /* 搜索栏改为垂直排列 */
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-item {
+    width: 100% !important;
+  }
+
+  .search-buttons {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+  }
+
+  .search-btn {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  .add-btn {
+    margin-left: 0;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 表格区域调整 */
+  .table-wrapper {
+    margin-top: 15px;
+    margin-left: -12px;
+    margin-right: -12px;
+    width: calc(100% + 24px);
+  }
+
+  .user-table {
+    font-size: 13px;
+  }
+
+  /* 分页居中 */
+  .pagination-wrapper {
+    justify-content: center;
+    margin-top: 15px;
+    overflow-x: auto;
+  }
+
+  /* 表单标签宽度调整 */
+  .user-form :deep(.el-form-item__label) {
+    width: 80px !important;
+  }
+}
+
+/* ========== 小屏幕适配（<=480px） ========== */
+@media screen and (max-width: 480px) {
+  .table-wrapper {
+    margin-left: -10px;
+    margin-right: -10px;
+    width: calc(100% + 20px);
+  }
 }
 </style>

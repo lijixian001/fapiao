@@ -45,4 +45,44 @@ body {
   width: 100%;
   height: 100vh;
 }
+
+/* ========== 全局移动端适配样式 ========== */
+
+/* 移动端断点：小于等于768px宽度为移动端 */
+@media screen and (max-width: 768px) {
+  /* 修复移动端点击高亮问题 */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  /* 确保body和html充满屏幕 */
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* 调整Element Plus按钮最小触摸区域 */
+  .el-button {
+    min-height: 44px;
+  }
+
+  /* 输入框高度适配触摸操作 */
+  .el-input__wrapper {
+    min-height: 44px;
+  }
+
+  /* 表格容器移动端横向滚动 */
+  .el-table {
+    overflow-x: auto;
+  }
+}
+
+/* 小屏幕适配（小于等于480px） */
+@media screen and (max-width: 480px) {
+  /* 进一步优化小屏幕的字体大小 */
+  html {
+    font-size: 14px;
+  }
+}
 </style>

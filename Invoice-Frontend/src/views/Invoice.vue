@@ -1,28 +1,36 @@
 <!--
-  发票管理页面组件
+  发票管理页面组件（支持PC+移动端响应式）
   功能说明：
   - 发票列表展示与分页
   - 按关键字（发票号/销方/购方）和发票状态搜索
   - 新增、编辑、查看、删除发票
   - 发票审核、归档操作
   - 发票状态与类型的格式化显示
+  - PC端：搜索栏一行多列，表格正常展示
+  - 移动端：搜索栏单列垂直排列，表格横向滑动，弹窗全屏
 -->
 <template>
   <div class="invoice-page">
-    <el-card>
-      <!-- 搜索栏：包含关键字搜索、状态筛选、搜索/重置按钮、新增按钮 -->
+    <el-card class="page-card">
+      <!-- 搜索栏：PC端一行多列，移动端单列垂直排列 -->
+      <div class="search-bar">
         <el-input
           v-model="searchForm.keyword"
           placeholder="搜索发票号/销方/购方"
-          style="width: 300px"
           clearable
           @keyup.enter="handleSearch"
+          class="search-item search-input"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
-        <el-select v-model="searchForm.invoice_status" placeholder="发票状态" style="width: 150px" clearable>
+        <el-select
+          v-model="searchForm.invoice_status"
+          placeholder="发票状态"
+          clearable
+          class="search-item search-select"
+        >
           <el-option label="待审核" :value="0" />
           <el-option label="已审核" :value="1" />
           <el-option label="已作废" :value="2" />
@@ -30,52 +38,56 @@
           <el-option label="已归档" :value="4" />
           <el-option label="已抵扣" :value="5" />
         </el-select>
-        <el-button type="primary" @click="handleSearch">
-          <el-icon><Search /></el-icon>搜索
-        </el-button>
-        <el-button @click="handleReset">重置</el-button>
-        <el-button type="success" style="margin-left: auto" @click="handleAdd">
+        <div class="search-buttons">
+          <el-button type="primary" @click="handleSearch" class="search-btn">
+            <el-icon><Search /></el-icon>搜索
+          </el-button>
+          <el-button @click="handleReset" class="search-btn">重置</el-button>
+        </div>
+        <el-button type="success" @click="handleAdd" class="add-btn">
           <el-icon><Plus /></el-icon>新增发票
         </el-button>
       </div>
 
-      <!-- 发票数据表格：展示发票列表，包含发票基本信息、状态、操作列 -->
-      <el-table :data="tableData" style="width: 100%; margin-top: 20px" v-loading="loading">
-        <el-table-column prop="invoice_number" label="发票号码" width="140" />
-        <el-table-column prop="invoice_code" label="发票代码" width="140" />
-        <el-table-column prop="invoice_date" label="开票日期" width="120" />
-        <el-table-column prop="seller_name" label="销方名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="buyer_name" label="购方名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="total_price_tax" label="价税合计" width="120">
-          <template #default="{ row }">
-            ¥{{ Number(row.total_price_tax).toFixed(2) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="invoice_status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="statusTagType(row.invoice_status)">
-              {{ statusText(row.invoice_status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button v-if="row.invoice_status === 0" link type="success" @click="handleVerify(row)">
-              审核
-            </el-button>
-            <el-button v-if="row.invoice_status !== 4" link type="warning" @click="handleArchive(row)">
-              归档
-            </el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <!-- 发票数据表格：移动端支持横向滑动查看 -->
+      <div class="table-wrapper">
+        <el-table :data="tableData" v-loading="loading" class="invoice-table">
+          <el-table-column prop="invoice_number" label="发票号码" width="140" />
+          <el-table-column prop="invoice_code" label="发票代码" width="140" />
+          <el-table-column prop="invoice_date" label="开票日期" width="120" />
+          <el-table-column prop="seller_name" label="销方名称" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="buyer_name" label="购方名称" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="total_price_tax" label="价税合计" width="120">
+            <template #default="{ row }">
+              ¥{{ Number(row.total_price_tax).toFixed(2) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="invoice_status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="statusTagType(row.invoice_status)" size="small">
+                {{ statusText(row.invoice_status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="280" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" size="small" @click="handleView(row)">查看</el-button>
+              <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+              <el-button v-if="row.invoice_status === 0" link type="success" size="small" @click="handleVerify(row)">
+                审核
+              </el-button>
+              <el-button v-if="row.invoice_status !== 4" link type="warning" size="small" @click="handleArchive(row)">
+                归档
+              </el-button>
+              <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
-      <!-- 分页组件：控制当前页码、每页条数，显示总记录数 -->
+      <!-- 分页组件：移动端居中对齐 -->
       <el-pagination
-        style="margin-top: 20px; justify-content: flex-end; display: flex"
+        class="pagination-wrapper"
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.page_size"
         :page-sizes="[10, 20, 50, 100]"
@@ -86,28 +98,34 @@
       />
     </el-card>
 
-    <!-- 新增/编辑发票对话框：包含发票完整信息表单 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px">
-      <el-form :model="formData" label-width="100px">
+    <!-- 新增/编辑发票对话框：移动端全屏展示 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="700px"
+      :fullscreen="isMobile"
+      class="invoice-dialog"
+    >
+      <el-form :model="formData" label-width="100px" class="invoice-form">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="12" :xs="24">
             <el-form-item label="发票代码">
               <el-input v-model="formData.invoice_code" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="12" :xs="24">
             <el-form-item label="发票号码">
               <el-input v-model="formData.invoice_number" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="12" :xs="24">
             <el-form-item label="开票日期">
               <el-date-picker v-model="formData.invoice_date" type="date" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="12" :xs="24">
             <el-form-item label="发票类型">
               <el-select v-model="formData.invoice_type" style="width: 100%">
                 <el-option label="增值税专用发票" :value="1" />
@@ -131,35 +149,43 @@
           <el-input v-model="formData.buyer_tax_no" />
         </el-form-item>
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="8" :xs="24">
             <el-form-item label="合计金额">
               <el-input-number v-model="formData.total_amount" style="width: 100%" :precision="2" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="8" :xs="24">
             <el-form-item label="合计税额">
               <el-input-number v-model="formData.total_tax" style="width: 100%" :precision="2" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="8" :xs="24">
             <el-form-item label="价税合计">
               <el-input-number v-model="formData.total_price_tax" style="width: 100%" :precision="2" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-form-item label="备注">
-          <el-input v-model="formData.remark" type="textarea" :rows="2" />
+          <el-input v-model="formData.remark" type="textarea" :rows="3" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        </div>
       </template>
     </el-dialog>
 
-    <!-- 发票详情对话框：以描述列表形式展示发票完整信息 -->
-    <el-dialog v-model="detailVisible" title="发票详情" width="700px">
-      <el-descriptions :column="2" border>
+    <!-- 发票详情对话框：移动端全屏展示 -->
+    <el-dialog
+      v-model="detailVisible"
+      title="发票详情"
+      width="700px"
+      :fullscreen="isMobile"
+      class="detail-dialog"
+    >
+      <el-descriptions :column="2" border :column-mobile="1" class="detail-descriptions">
         <el-descriptions-item label="发票号码">{{ detailData.invoice_number }}</el-descriptions-item>
         <el-descriptions-item label="发票代码">{{ detailData.invoice_code || '-' }}</el-descriptions-item>
         <el-descriptions-item label="开票日期">{{ detailData.invoice_date || '-' }}</el-descriptions-item>
@@ -170,11 +196,11 @@
         <el-descriptions-item label="销方税号">{{ detailData.seller_tax_no || '-' }}</el-descriptions-item>
         <el-descriptions-item label="购方名称">{{ detailData.buyer_name || '-' }}</el-descriptions-item>
         <el-descriptions-item label="购方税号">{{ detailData.buyer_tax_no || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="合计金额">¥{{ Number(detailData.total_amount).toFixed(2) }}</el-descriptions-item>
-        <el-descriptions-item label="合计税额">¥{{ Number(detailData.total_tax).toFixed(2) }}</el-descriptions-item>
-        <el-descriptions-item label="价税合计">¥{{ Number(detailData.total_price_tax).toFixed(2) }}</el-descriptions-item>
+        <el-descriptions-item label="合计金额">¥{{ Number(detailData.total_amount || 0).toFixed(2) }}</el-descriptions-item>
+        <el-descriptions-item label="合计税额">¥{{ Number(detailData.total_tax || 0).toFixed(2) }}</el-descriptions-item>
+        <el-descriptions-item label="价税合计">¥{{ Number(detailData.total_price_tax || 0).toFixed(2) }}</el-descriptions-item>
         <el-descriptions-item label="状态">
-          <el-tag :type="statusTagType(detailData.invoice_status)">
+          <el-tag :type="statusTagType(detailData.invoice_status)" size="small">
             {{ statusText(detailData.invoice_status) }}
           </el-tag>
         </el-descriptions-item>
@@ -186,18 +212,18 @@
 
 <script setup>
 // 导入Vue组合式API
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 // 导入Element Plus消息提示和确认对话框组件
 import { ElMessage, ElMessageBox } from 'element-plus'
 // 导入发票相关API接口函数
 import {
-  getInvoiceList,    // 获取发票列表
-  createInvoice,     // 创建发票
-  updateInvoice,     // 更新发票
-  deleteInvoice,     // 删除发票
-  archiveInvoice,    // 归档发票
-  verifyInvoice,     // 审核发票
-  getInvoiceDetail   // 获取发票详情
+  getInvoiceList,
+  createInvoice,
+  updateInvoice,
+  deleteInvoice,
+  archiveInvoice,
+  verifyInvoice,
+  getInvoiceDetail
 } from '@/api/invoice'
 
 // 表格数据加载状态
@@ -214,6 +240,13 @@ const dialogTitle = ref('')
 const isEdit = ref(false)
 // 当前编辑的发票ID
 const editId = ref(null)
+// 是否为移动端
+const isMobile = ref(false)
+
+// 监听窗口大小变化
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 768
+}
 
 // 发票列表数据
 const tableData = ref([])
@@ -222,45 +255,43 @@ const detailData = ref({})
 
 // 搜索表单数据
 const searchForm = reactive({
-  keyword: '',          // 搜索关键字（发票号/销方/购方）
-  invoice_status: null  // 发票状态筛选
+  keyword: '',
+  invoice_status: null
 })
 
 // 分页配置
 const pagination = reactive({
-  page: 1,       // 当前页码
-  page_size: 10, // 每页条数
-  total: 0       // 总记录数
+  page: 1,
+  page_size: 10,
+  total: 0
 })
 
 // 发票表单数据（新增/编辑用）
 const formData = reactive({
-  invoice_code: '',      // 发票代码
-  invoice_number: '',    // 发票号码
-  invoice_date: null,    // 开票日期
-  invoice_type: 1,       // 发票类型（1：专票，2：普票，3：电子专票，4：电子普票）
-  seller_name: '',       // 销方名称
-  seller_tax_no: '',     // 销方税号
-  buyer_name: '',        // 购方名称
-  buyer_tax_no: '',      // 购方税号
-  total_amount: 0,       // 合计金额
-  total_tax: 0,          // 合计税额
-  total_price_tax: 0,    // 价税合计
-  remark: ''             // 备注
+  invoice_code: '',
+  invoice_number: '',
+  invoice_date: null,
+  invoice_type: 1,
+  seller_name: '',
+  seller_tax_no: '',
+  buyer_name: '',
+  buyer_tax_no: '',
+  total_amount: 0,
+  total_tax: 0,
+  total_price_tax: 0,
+  remark: ''
 })
 
 // 获取发票列表数据
 const fetchData = async () => {
   loading.value = true
   try {
-    // 调用API获取发票列表，传入分页和搜索参数
     const res = await getInvoiceList({
       page: pagination.page,
       page_size: pagination.page_size,
       keyword: searchForm.keyword || undefined,
       invoice_status: searchForm.invoice_status
     })
-    // 更新表格数据和总记录数
     tableData.value = res.list
     pagination.total = res.total
   } catch (error) {
@@ -289,7 +320,6 @@ const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '新增发票'
   editId.value = null
-  // 重置表单数据，根据字段类型设置默认值
   Object.keys(formData).forEach(key => {
     if (key === 'invoice_type') {
       formData[key] = 1
@@ -308,7 +338,6 @@ const handleEdit = (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑发票'
   editId.value = row.id
-  // 将当前行数据合并到表单中
   Object.assign(formData, row)
   dialogVisible.value = true
 }
@@ -329,16 +358,13 @@ const handleSubmit = async () => {
   try {
     submitLoading.value = true
     if (isEdit.value) {
-      // 编辑模式：调用更新接口
       await updateInvoice(editId.value, formData)
       ElMessage.success('更新成功')
     } else {
-      // 新增模式：调用创建接口
       await createInvoice(formData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
-    // 刷新列表数据
     fetchData()
   } catch (error) {
     console.error('提交失败:', error)
@@ -398,7 +424,7 @@ const handleArchive = (row) => {
   }).catch(() => {})
 }
 
-// 发票状态文本转换：将状态数字转换为中文文本
+// 发票状态文本转换
 const statusText = (status) => {
   const map = {
     0: '待审核',
@@ -411,7 +437,7 @@ const statusText = (status) => {
   return map[status] || '未知'
 }
 
-// 发票状态标签类型转换：根据状态返回对应的Element Plus标签类型
+// 发票状态标签类型转换
 const statusTagType = (status) => {
   const map = {
     0: 'warning',
@@ -424,7 +450,7 @@ const statusTagType = (status) => {
   return map[status] || 'info'
 }
 
-// 发票类型文本转换：将类型数字转换为中文文本
+// 发票类型文本转换
 const invoiceTypeText = (type) => {
   const map = {
     1: '增值税专用发票',
@@ -435,18 +461,146 @@ const invoiceTypeText = (type) => {
   return map[type] || '未知'
 }
 
-// 组件挂载时获取发票列表
+// 组件挂载时
 onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize)
   fetchData()
+})
+
+// 组件卸载时
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <style scoped>
-/* 搜索栏样式：弹性布局，元素间距12px，垂直居中，允许换行 */
+/* 页面卡片容器 */
+.page-card {
+  width: 100%;
+}
+
+/* ========== 搜索栏样式 ========== */
 .search-bar {
   display: flex;
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.search-item {
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 300px;
+}
+
+.search-select {
+  width: 150px;
+}
+
+.search-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.add-btn {
+  margin-left: auto;
+}
+
+/* ========== 表格样式 ========== */
+.table-wrapper {
+  margin-top: 20px;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.invoice-table {
+  width: 100%;
+  min-width: 800px;
+}
+
+/* ========== 分页样式 ========== */
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ========== 对话框底部按钮 ========== */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ========== 表单详情描述 ========== */
+.detail-descriptions {
+  width: 100%;
+}
+
+/* ========== 移动端响应式样式（<=768px） ========== */
+@media screen and (max-width: 768px) {
+  /* 搜索栏改为垂直排列 */
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-item {
+    width: 100% !important;
+  }
+
+  .search-buttons {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+  }
+
+  .search-btn {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  .add-btn {
+    margin-left: 0;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* 表格区域调整 */
+  .table-wrapper {
+    margin-top: 15px;
+    margin-left: -12px;
+    margin-right: -12px;
+    width: calc(100% + 24px);
+  }
+
+  .invoice-table {
+    font-size: 13px;
+  }
+
+  /* 分页居中 */
+  .pagination-wrapper {
+    justify-content: center;
+    margin-top: 15px;
+    overflow-x: auto;
+  }
+
+  /* 表单标签宽度调整 */
+  .invoice-form :deep(.el-form-item__label) {
+    width: 80px !important;
+  }
+}
+
+/* ========== 小屏幕适配（<=480px） ========== */
+@media screen and (max-width: 480px) {
+  .table-wrapper {
+    margin-left: -10px;
+    margin-right: -10px;
+    width: calc(100% + 20px);
+  }
 }
 </style>
